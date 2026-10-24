@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-# Requires wf-recorder: https://github.com/ammen99/wf-recorder
+# Requires gpu-screen-recorder: https://github.com/nowrep/gpu-screen-recorder
 
-# Get the default audio sink
 defaultSink=$(pactl get-default-sink)
-WF_RECORDER_OPTS="--audio=$defaultSink.monitor -c libx264rgb"
-outputFile=""
+videoCodec="auto" # auto|h264|hevc|hevc_10buit
+videoCodecPortal="auto"
+videoCodecRegion="auto"
+qualityScreen="ultra" # quality  preset  (medium,  high,  very_high,  ultra) for QP/VBR mode, or bitrate (kbps) for CBR mode (default:very_high).
+qualityPortal="ultra" # quality  preset  (medium,  high,  very_high,  ultra) for QP/VBR mode, or bitrate (kbps) for CBR mode (default:very_high).
+qualityRegion="ultra" # quality  preset  (medium,  high,  very_high,  ultra) for QP/VBR mode, or bitrate (kbps) for CBR mode (default:very_high).
+# bitrateMode="auto" # auto|qp|vbr|cbr | Bitrate mode (default: auto → qp). CBR recommended for replay buffer
+videoFormat="mp4"
 outputDir=""
+outputFile=""
+notifyId="/tmp/recordID"
 
 # Function to check if recording is active
 checkRecording() {
-    pgrep -f "wf-recorder" >/dev/null
+    pgrep -f "gpu-screen-recorder" >/dev/null
 }
 
 # Function to start screen recording
@@ -22,20 +29,21 @@ startRecording() {
     target="$2"
 
     if [ "$target" == "screen" ]; then
-        monitor_name="$3"
-        outputDir="$4"
+        outputDir="$3"
+    elif [ "$target" == "portal" ]; then
+        outputDir="$3"
     elif [ "$target" == "region" ]; then
         outputDir="$3"
     else
-        echo "Usage: $0 start {screen <monitor_name> | region} <output_directory>"
+        echo "Usage: $0 start {screen <monitor_name> | portal | region} <output_directory>"
         exit 1
     fi
 
     # Set a default output directory if not provided
-    outputDir="${outputDir:-$HOME/Videos}"
+    outputDir="${outputDir:-$HOME/Videos/Screencast}"
 
     # Expand ~ to $HOME if present in outputDir
-    outputDir="${outputDir/#\~/$HOME}"
+    outputDir="${outputDir/#\~/$HOME/}"
 
     # Ensure output directory exists
     if [ ! -d "$outputDir" ]; then
@@ -44,61 +52,62 @@ startRecording() {
     fi
 
     # Generate output filename and path
-    outputFile="recording_$(date +%Y-%m-%d_%H-%M-%S).mp4"
+    outputFile="recording_$(date +%Y-%m-%d_%H-%M-%S).$videoFormat"
     outputPath="$outputDir/$outputFile"
 
     echo "Target: $target"
-    echo "Monitor: ${monitor_name:-N/A}"
     echo "Output dir: $outputDir"
     echo "Output file: $outputPath"
 
     # Start screen recording
     if [ "$target" == "screen" ]; then
-        if [ -z "$monitor_name" ]; then
-            echo "Error: Monitor name is required for screen recording."
-            exit 1
-        fi
-
-        monitor_info=$(hyprctl -j monitors | jq -r ".[] | select(.name == \"$monitor_name\")")
-        if [ -z "$monitor_info" ]; then
-            echo "Error: Monitor '$monitor_name' not found."
-            exit 1
-        fi
-
-        w=$(echo "$monitor_info" | jq -r '.width')
-        h=$(echo "$monitor_info" | jq -r '.height')
-        scale=$(echo "$monitor_info" | jq -r '.scale')
-        x=$(echo "$monitor_info" | jq -r '.x')
-        y=$(echo "$monitor_info" | jq -r '.y')
-
-        transform=$(echo "$monitor_info" | jq -r '.transform')
-        rotation_filter=""
-
-        if [ "$transform" -eq 1 ] || [ "$transform" -eq 3 ]; then
-            scaled_width=$(awk "BEGIN { print $h / $scale }")
-            scaled_height=$(awk "BEGIN { print $w / $scale }")
-        else
-            scaled_width=$(awk "BEGIN { print $w / $scale }")
-            scaled_height=$(awk "BEGIN { print $h / $scale }")
-        fi
-
-        case "$transform" in
-        1)
-            rotation_filter="-F transpose=1"
-            ;;
-        3)
-            rotation_filter="-F transpose=2"
-            ;;
-        esac
-
-        wf-recorder $WF_RECORDER_OPTS $rotation_filter --geometry "${x},${y} ${scaled_width}x${scaled_height}" --file "$outputPath" &
+        gpu-screen-recorder \
+            -w screen \
+            -k "$videoCodec" \
+            -f 60 \
+            -q "$qualityScreen" \
+            -c "$videoFormat" \
+            -a "$defaultSink.monitor" \
+            -fallback-cpu-encoding yes \
+            -o "$outputPath" &
+    elif [ "$target" == "portal" ]; then
+        gpu-screen-recorder \
+            -w portal \
+            -k "$videoCodecPortal" \
+            -f 60 \
+            -q "$qualityPortal" \
+            -fm content \
+            -c "$videoFormat" \
+            -a "$defaultSink.monitor" \
+            -fallback-cpu-encoding yes \
+            -restore-portal-session yes \
+            -o "$outputPath" &
     elif [ "$target" == "region" ]; then
-        wf-recorder $WF_RECORDER_OPTS --geometry "$(slurp)" --file "$outputPath" &
+        # Use slurp to select a region and format output as WxH+X+Y
+        region=$(slurp -f "%wx%h+%x+%y")
+        if [ -z "$region" ]; then
+            echo "Error: No region selected."
+            exit 1
+        fi
+
+        echo "Selected region: $region"
+
+        gpu-screen-recorder \
+            -w region \
+            -region "$region" \
+            -k "$videoCodecRegion" \
+            -f 60 \
+            -q "$qualityRegion" \
+            -c "$videoFormat" \
+            -a "$defaultSink.monitor" \
+            -fallback-cpu-encoding yes \
+            -o "$outputPath" &
     fi
 
-    disown "$(jobs -p | tail -n 1)"
     echo "Recording started. Saving to $outputPath"
     echo "$outputPath" >/tmp/last_recording_path
+
+    # notify-send "Screen Recording 📽️" "Recording started.\nOutput will be saved to\n$outputPath" -t 3000 -i "video"
 }
 
 # Function to stop screen recording
@@ -108,21 +117,23 @@ stopRecording() {
         exit 1
     fi
 
-    pkill -SIGINT -f wf-recorder
-    sleep 1 # Allow wf-recorder time to terminate before proceeding
+    pkill -SIGINT -f gpu-screen-recorder
+    while pgrep -f "gpu-screen-recorder" >/dev/null; do
+        sleep 0.5
+    done
 
     outputPath=$(cat /tmp/last_recording_path 2>/dev/null)
 
     if [ -z "$outputPath" ] || [ ! -f "$outputPath" ]; then
         notify-send "Recording stopped" "No recent recording found." \
-            -i video-x-generic \
+            -i video \
             -a "Screen Recorder" \
             -t 10000
         exit 1
     fi
 
     notify-send "Recording stopped" "Saved to: $outputPath" \
-        -i video-x-generic \
+        -i video \
         -a "Screen Recorder" \
         -t 10000 \
         --action="scriptAction:-xdg-open $(dirname "$outputPath")=Open Directory" \
@@ -145,7 +156,7 @@ status)
     fi
     ;;
 *)
-    echo "Usage: $0 {start [screen <monitor_name> | region] <output_directory> | stop | status}"
+    echo "Usage: $0 {start [screen <monitor_name> | portal | region] <output_directory> | stop | status}"
     exit 1
     ;;
 esac
