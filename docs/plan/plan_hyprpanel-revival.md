@@ -1,18 +1,20 @@
 # Implementation Plan: HyprPanel Revival
 
+## Revisions
+
+- **2026-10-25 — Branching re-scoped at maintainer request.** The original plan kept all tasks on a single `feature/hyprpanel-revival` bundle branch reviewed as one unit. The maintainer judged the scope too large for one branch and requested one branch and one PR per task with descriptive naming. Each task now gets `feature/<task-slug>` (see each task's metadata) with a PR titled `Task N: <name>`, merged in dependency order; each new branch is cut from `master` after the previous task's PR merges. Task 1 and this plan document ride together on the already-pushed branch, renamed `feature/hyprpanel-revival` → `feature/reproducible-bootstrap` on the fork.
+
 ## Overview
 
 HyprPanel is archived upstream but still in active use by its maintainer. This plan turns the findings in [`docs/audit.md`](../audit.md) into an ordered set of independently committable tasks that restore the developer baseline first, then improve safety, maintainability, and runtime quality. Each task is small enough to land in one focused session and leaves the panel working.
 
 **Overall scope: XL** (cross-cutting: build system, type system, tests, CI, security, refactors, performance).
 
-**Branch:** `feature/hyprpanel-revival` — created before Task 1 and kept for the whole bundle. The bundle is reviewed as one unit.
-
-**Bundle:** all tasks below form one bundle. Do not merge partial bundles; merge only when every task is closed out and the Definition of Done holds.
+**Branching and PR strategy:** one branch and one PR per task — branch `feature/<task-slug>` (recorded in each task's metadata below), PR titled `Task N: <short name>`. PRs merge in dependency order; never open a task's PR before its dependencies have merged. Cut each new branch from `master` after the previous PR merges; stack a branch on its dependency only if work must start before that dependency merges. Every PR keeps the Definition of Done for its task.
 
 ## Architecture Decisions
 
-- **GTK 3 + AGS stays for now.** The audit flagged GTK 3 coupling as a long-term risk, but migrating to GTK 4/Rust is a rewrite, not a revival task. Plan for it in a separate future plan; do not mix it into this bundle.
+- **GTK 3 + AGS stays for now.** The audit flagged GTK 3 coupling as a long-term risk, but migrating to GTK 4/Rust is a rewrite, not a revival task. Plan for it in a separate future plan; do not mix it into this effort.
 - **Type declarations come from the existing `external/ags-types` submodule.** The submodule already exists and CI already has the copy step commented out. Re-enable it rather than inventing a new dependency source.
 - **Test runner is Node's built-in `node:test` runner.** The project has no test tooling. Node's built-in runner avoids adding a dependency and works with the existing TypeScript setup via `tsx` or a compile step. Prefer `node:test` plus `tsx` as the only new dev dependency.
 - **Shell command execution is centralized behind one safe helper.** Rather than patching 39 call sites individually, introduce an argument-array command runner and migrate callers in vertical slices (one service per task).
@@ -77,7 +79,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (4 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: lint + meson build + manual panel launch
+**Task metadata:** scope M | branch `feature/reproducible-bootstrap` (renamed from `feature/hyprpanel-revival`; see Revisions) | validation: lint + meson build + manual panel launch
 
 ---
 
@@ -109,7 +111,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (5-6 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: tsc + lint + meson build + manual panel launch
+**Task metadata:** scope M | branch `feature/gir-type-baseline` | validation: tsc + lint + meson build + manual panel launch
 
 ---
 
@@ -140,7 +142,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (5 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint
+**Task metadata:** scope M | branch `feature/test-harness` | validation: npm test + lint
 
 ---
 
@@ -168,7 +170,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** S (2 files)
 
-**Task metadata:** scope S | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: local gate commands + draft PR check list
+**Task metadata:** scope S | branch `feature/ci-quality-gates` | validation: local gate commands + draft PR check list
 
 ### Checkpoint: Foundation
 
@@ -177,7 +179,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 - [ ] `npm test` passes.
 - [ ] `meson compile -C build` succeeds.
 - [ ] CI runs all four gates on pull requests.
-- [ ] Human review of the bundle so far before starting refactors.
+- [ ] Human review of the merged tasks so far before starting refactors (each PR review counts).
 
 ### Phase 2: Safety and correctness
 
@@ -207,7 +209,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** S (3 files)
 
-**Task metadata:** scope S | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + manual panel launch
+**Task metadata:** scope S | branch `feature/safe-command-runner` | validation: npm test + lint + tsc + manual panel launch
 
 ---
 
@@ -235,7 +237,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** S (2 files)
 
-**Task metadata:** scope S | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + manual notification check
+**Task metadata:** scope S | branch `feature/systemutilities-shell-safety` | validation: npm test + lint + tsc + manual notification check
 
 ---
 
@@ -266,7 +268,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (4 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + meson build + manual module checks
+**Task metadata:** scope M | branch `feature/shell-call-site-migration` | validation: npm test + lint + tsc + meson build + manual module checks
 
 ---
 
@@ -297,7 +299,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (4 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + manual timer observation
+**Task metadata:** scope M | branch `feature/poller-lifecycle` | validation: npm test + lint + tsc + manual timer observation
 
 ---
 
@@ -328,7 +330,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (4 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + meson build + manual WiFi flows
+**Task metadata:** scope M | branch `feature/split-wifi-service` | validation: npm test + lint + tsc + meson build + manual WiFi flows
 
 ---
 
@@ -358,7 +360,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (3 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + meson build + manual media check
+**Task metadata:** scope M | branch `feature/split-media-service` | validation: npm test + lint + tsc + meson build + manual media check
 
 ---
 
@@ -387,7 +389,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (5+ files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: lint + tsc + meson build + manual settings walkthrough
+**Task metadata:** scope M | branch `feature/split-settings-config` | validation: lint + tsc + meson build + manual settings walkthrough
 
 ---
 
@@ -427,7 +429,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (10-14 files, but mostly deletions)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: knip review + lint + tsc + meson build + manual panel launch
+**Task metadata:** scope M | branch `feature/dead-code-sweep` | validation: knip review + lint + tsc + meson build + manual panel launch
 
 ### Checkpoint: Safety and correctness
 
@@ -436,7 +438,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 - [ ] `npm test` passes.
 - [ ] `meson compile -C build` succeeds.
 - [ ] No remaining unvalidated shell interpolation in `src/` or `scripts/`.
-- [ ] Human review of the bundle before starting polish tasks.
+- [ ] Human review of the merged tasks before starting polish tasks.
 
 ### Phase 3: User-visible quality
 
@@ -466,7 +468,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (4-6 files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + manual CPU-usage observation
+**Task metadata:** scope M | branch `feature/visibility-aware-polling` | validation: npm test + lint + tsc + manual CPU-usage observation
 
 ---
 
@@ -497,7 +499,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** M (5+ files)
 
-**Task metadata:** scope M | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: npm test + lint + tsc + meson build + manual degraded-environment check
+**Task metadata:** scope M | branch `feature/dependency-degradation` | validation: npm test + lint + tsc + meson build + manual degraded-environment check
 
 ---
 
@@ -507,7 +509,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Acceptance criteria:**
 - [ ] `README.md` states the maintenance status plainly, points at `docs/`, and lists current system requirements.
-- [ ] `docs/development.md` matches the commands that actually exist in `package.json` after this bundle lands.
+- [ ] `docs/development.md` matches the commands that actually exist in `package.json` after all tasks land.
 - [ ] `docs/security.md` reflects the post-hardening state and lists the external commands HyprPanel runs.
 - [ ] A `docs/adr/` entry records the decision to stay on GTK 3 / AGS for now and why.
 
@@ -526,7 +528,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 **Estimated scope:** S (5 files, documentation only)
 
-**Task metadata:** scope S | branch `feature/hyprpanel-revival` | bundle `hyprpanel-revival` | validation: documentation review (no code checks required)
+**Task metadata:** scope S | branch `feature/docs-refresh` | validation: documentation review (no code checks required)
 
 ### Checkpoint: Complete
 
@@ -538,7 +540,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 - [ ] `meson compile -C build` succeeds.
 - [ ] Panel launched and smoke-tested across bar, menus, settings, and notifications.
 - [ ] `gitnexus detect-changes` run and clean.
-- [ ] Ready for review as one bundle.
+- [ ] All tasks merged via their individual PRs and closed out.
 
 ## Risks and Mitigations
 
@@ -549,7 +551,7 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 | Command hardening breaks a feature that relied on shell expansion | Medium | Migrate one service at a time and manually verify each affected module; keep behavior parity as the acceptance criterion |
 | Splitting the WiFi/media services changes runtime behavior | High | Preserve the public API exactly; verify with the manual flows listed per task |
 | Test coverage is too thin to catch regressions | Medium | Start with pure helpers, then add tests alongside each refactor in Tasks 5-10 |
-| The bundle grows too large to review | Medium | One commit per task, each independently verifiable; split the branch into reviewable phases if needed |
+| A single PR grows too large to review | Medium | One task per branch and PR; split the task further if its diff exceeds a reviewable size |
 | Polling changes alter visible update timing | Medium | Keep a configuration switch and document the behavior change |
 
 ## Parallelization Opportunities
@@ -562,4 +564,4 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 
 - Should the type declarations be vendored into the repository or generated on demand from the installed GIR files? Generated is more correct but adds a bootstrap step.
 - Should the revival keep the `hyprpanel` CLI surface stable for users with existing scripts? The plan assumes yes.
-- Is a GTK 4 migration worth a separate exploratory plan once this bundle lands, or should the project stay on GTK 3 indefinitely?
+- Is a GTK 4 migration worth a separate exploratory plan once these tasks land, or should the project stay on GTK 3 indefinitely?
