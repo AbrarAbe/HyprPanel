@@ -4,6 +4,7 @@
     "description": "A customizable panel built for Hyprland.",
     "main": "app.ts",
     "scripts": {
+        "bootstrap": "bash scripts/bootstrap.sh",
         "lint": "eslint --config .eslintrc.json .",
         "lint:fix": "eslint --config .eslintrc.json . --fix",
         "format": "prettier --write 'modules/**/*.ts'",

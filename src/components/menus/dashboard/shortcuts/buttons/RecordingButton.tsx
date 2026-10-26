@@ -41,6 +41,18 @@ const MonitorListDropdown = (): JSX.Element => {
                 }),
             )}
             <MenuItem
+                label="Portal"
+                onButtonPressEvent={(_, event) => {
+                    if (event.get_button()[1] !== Gdk.BUTTON_PRIMARY) return;
+
+                    App.get_window('dashboardmenu')?.set_visible(false);
+
+                    const sanitizedPath = getRecordingPath().replace(/"/g, '\\"');
+                    const command = `${SRC_DIR}/scripts/screen_record.sh start portal "${sanitizedPath}"`;
+                    executeCommand(command);
+                }}
+            />
+            <MenuItem
                 label="Region"
                 onButtonPressEvent={(_, event) => {
                     if (event.get_button()[1] !== Gdk.BUTTON_PRIMARY) return;
