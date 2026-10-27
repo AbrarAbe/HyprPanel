@@ -8,6 +8,7 @@
         "lint": "eslint --config .eslintrc.json .",
         "lint:fix": "eslint --config .eslintrc.json . --fix",
         "typecheck": "tsc --noEmit",
+        "test": "node --test --experimental-test-module-mocks \"tests/**/*.test.ts\"",
         "format": "prettier --write 'modules/**/*.ts'",
         "knip": "knip"
     },

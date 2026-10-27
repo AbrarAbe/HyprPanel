@@ -93,6 +93,30 @@ npx --yes @ts-for-gir/cli generate AstalIO-0.1 AstalTray-0.1 AstalWp-0.1 Pango-1
 cp @girs/{astalio-0.1,astaltray-0.1,astalwp-0.1,pango-1.0}.d.ts types/gir-overrides/
 ```
 
+## Testing
+
+```sh
+npm test                                             # full suite
+node --test --experimental-test-module-mocks tests/lib/string/formatters.test.ts   # single file
+```
+
+The suite uses Node's built-in `node:test` runner with native TypeScript type
+stripping — **no test dependencies are installed**. Tests live under `tests/`,
+mirroring the `src/` layout, and import sources with explicit `.ts` extensions
+(Node ESM does not resolve extensionless or directory-index imports).
+
+Notes:
+
+- Files under test must use erasable-only TypeScript (no enums) and must not
+  transitively import `gi://` or `astal` modules. Type-only imports must be
+  written as `import type` so they are erased under Node's type stripping.
+- `tests/lib/path/helpers.test.ts` mocks the `astal` module via
+  `mock.module` (hence the `--experimental-test-module-mocks` flag) to supply
+  a deterministic `GLib.get_home_dir`.
+- `src/lib/units/time` is not covered: it is a module-level polling side
+  effect (`Variable.poll`) that requires the GJS runtime, not a conversion
+  helper.
+
 ## Linting and formatting
 
 ```sh

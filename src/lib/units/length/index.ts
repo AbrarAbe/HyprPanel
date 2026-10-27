@@ -1,4 +1,4 @@
-import { LengthUnit } from './types';
+import type { LengthUnit } from './types';
 
 export class LengthConverter {
     private readonly _value: number;

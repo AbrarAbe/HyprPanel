@@ -1,4 +1,4 @@
-import { PressureUnit } from './types';
+import type { PressureUnit } from './types';
 
 export class PressureConverter {
     private readonly _value: number;
