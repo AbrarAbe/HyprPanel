@@ -37,5 +37,5 @@ export const SliderIcon = ({ type, device }: SliderIconProps): JSX.Element => {
 
 interface SliderIconProps {
     type: 'playback' | 'input';
-    device: AstalWp.Endpoint;
+    device: AstalWp.Node;
 }

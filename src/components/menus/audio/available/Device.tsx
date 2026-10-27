@@ -24,7 +24,7 @@ const DeviceName = ({ device, type }: Omit<AudioDeviceProps, 'icon'>): JSX.Eleme
                     ? `menu-button-name active ${type}`
                     : `menu-button-name ${type}`,
             )}
-            label={device.description}
+            label={device.description ?? ''}
         />
     );
 };

@@ -19,7 +19,7 @@ export const PlaybackDevices = (): JSX.Element => {
 
                     return devices
                         .slice()
-                        .sort((a, b) => a.description.localeCompare(b.description))
+                        .sort((a, b) => (a.description ?? '').localeCompare(b.description ?? ''))
                         .map((device) => {
                             return <AudioDevice device={device} type={'playback'} icon={''} />;
                         });

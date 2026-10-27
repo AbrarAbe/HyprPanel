@@ -17,5 +17,6 @@ export const SliderItem = ({ type, device }: SliderItemProps): JSX.Element => {
 
 interface SliderItemProps {
     type: 'playback' | 'input';
-    device: AstalWp.Endpoint;
+    /** Both Endpoints (default devices) and Streams (playbacks) derive from Node. */
+    device: AstalWp.Node;
 }

@@ -53,6 +53,6 @@ export const Slider = ({ device, type }: SliderProps): JSX.Element => {
 };
 
 interface SliderProps {
-    device: AstalWp.Endpoint;
+    device: AstalWp.Node;
     type: 'playback' | 'input';
 }

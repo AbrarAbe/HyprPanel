@@ -58,6 +58,11 @@ log "Copying GIR type declarations into @girs/..."
 rm -rf @girs
 mkdir -p @girs
 cp -R external/ags-types/@girs/* @girs/
+# Apply overrides on top: the submodule's vendored declarations predate the
+# installed Astal/Pango runtime (stale AstalIO/AstalTray/AstalWp, Pango's
+# WrapMode enum missing NONE), and GtkSource 3.0 is missing entirely.
+# See types/gir-overrides/ — each file documents its provenance.
+cp types/gir-overrides/*.d.ts @girs/
 
 log "Bootstrap complete. Next steps:"
 log "  meson setup build      # first time only"
