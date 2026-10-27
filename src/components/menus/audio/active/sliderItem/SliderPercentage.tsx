@@ -14,5 +14,5 @@ export const SliderPercentage = ({ type, device }: SliderPercentageProps): JSX.E
 
 interface SliderPercentageProps {
     type: 'playback' | 'input';
-    device: AstalWp.Endpoint;
+    device: AstalWp.Node;
 }

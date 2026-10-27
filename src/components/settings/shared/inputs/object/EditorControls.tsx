@@ -1,5 +1,6 @@
 import { bind } from 'astal';
 import { Gtk } from 'astal/gtk3';
+import Pango from 'gi://Pango?version=1.0';
 import { EditorControlsProps } from './types';
 
 export const EditorControls = ({ jsonError, onSave }: EditorControlsProps): JSX.Element => {
@@ -14,7 +15,7 @@ export const EditorControls = ({ jsonError, onSave }: EditorControlsProps): JSX.
                     halign={Gtk.Align.START}
                     label={bind(jsonError)}
                     wrap
-                    wrapMode={Gtk.WrapMode.WORD}
+                    wrapMode={Pango.WrapMode.WORD}
                     maxWidthChars={50}
                 />
             </revealer>

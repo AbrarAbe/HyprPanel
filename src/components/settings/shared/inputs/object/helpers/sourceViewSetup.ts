@@ -45,9 +45,8 @@ function setupSyntaxHighlighting(buffer: GtkSource.Buffer): void {
 function setupTheme(buffer: GtkSource.Buffer): void {
     const styleManager = GtkSource.StyleSchemeManager.get_default();
 
-    const currentSearchPath = styleManager.get_search_path();
     const assetsPath = `${SRC_DIR}/assets`;
-    styleManager.set_search_path([assetsPath, ...currentSearchPath]);
+    styleManager.set_search_path([assetsPath, ...(styleManager.get_search_path() ?? [])]);
 
     const tokyoNight = styleManager.get_scheme('tokyo-night');
 

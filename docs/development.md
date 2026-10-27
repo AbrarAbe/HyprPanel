@@ -56,10 +56,42 @@ sudo meson install -C build
 ## Type checking
 
 ```sh
-npx tsc --noEmit
+npm run typecheck   # or: npx tsc --noEmit
 ```
 
-This currently fails because GIR type declarations are missing. Add or configure `@girs` types before relying on `tsc` in CI.
+Type checking works against the GIR declarations in `@girs/` (created by
+`npm run bootstrap`). The current baseline is **one error, in third-party
+code**: `binding.ts(121)` inside the system-installed astal package
+(`/usr/share/astal/gjs`), which this repository cannot fix — it predates the
+type-check baseline and fails with both old and regenerated AstalIO
+declarations. Project code type-checks cleanly.
+
+### GIR declaration overrides
+
+The `external/ags-types` submodule's vendored declarations predate the
+installed Astal/Pango runtime, and `@girs/` is regenerated content. To keep
+fixes reproducible, corrected declarations live in the repo under
+`types/gir-overrides/` and `scripts/bootstrap.sh` copies them over `@girs/`
+after the submodule checkout:
+
+- `astalio-0.1.d.ts`, `astaltray-0.1.d.ts`, `astalwp-0.1.d.ts` — regenerated
+  from the installed GIRs with `ts-for-gir@5.5.0` (`--promisify false`).
+- `pango-1.0.d.ts` — regenerated the same way; the vendored copy's `WrapMode`
+  enum was missing `NONE` and had shifted numeric values.
+- `gtksource-3.0.d.ts` — hand-maintained subset of the gtksourceview3 API the
+  panel uses; the vendored set only covers GtkSource 4.0/5.0.
+- `types/gobject-signal-helpers.d.ts` — module augmentation providing the
+  `SignalCallback`/`GjsParameters` helpers the regenerated files expect but
+  the vendored GObject declaration lacks.
+
+To regenerate an override after a runtime upgrade (adjust the module list as
+needed):
+
+```sh
+npx --yes @ts-for-gir/cli generate AstalIO-0.1 AstalTray-0.1 AstalWp-0.1 Pango-1.0 \
+    --outdir @girs --ignoreVersionConflicts --promisify false
+cp @girs/{astalio-0.1,astaltray-0.1,astalwp-0.1,pango-1.0}.d.ts types/gir-overrides/
+```
 
 ## Linting and formatting
 
@@ -79,7 +111,8 @@ Review Knip output before deleting files. Some reported unused dependencies are 
 
 ## Known gaps
 
+- One third-party type-check baseline error in the system astal package (see
+  Type checking above).
 - No automated tests.
-- No CI configuration is checked in for type checking or tests.
 - The README wiki links may be stale.
 - `npm audit` currently reports 10 vulnerabilities in development dependencies.
