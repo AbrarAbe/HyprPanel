@@ -7,36 +7,35 @@ on:
 
 jobs:
     code_quality:
+        name: Lint, type check, and test
         runs-on: ubuntu-latest
-
         steps:
-            - name: Checkout main repository with submodules
-              uses: actions/checkout@v3
-            #   with:
-            #       submodules: true
-            #
-            # - name: Clone astal repository to /usr/share/astal/gjs
-            #   run: |
-            #       sudo mkdir -p /usr/share/astal/
-            #       sudo git clone https://github.com/Jas-SinghFSU/astalgjs.git /usr/share/astal
-            #
-            # - name: Copy types to @girs/
-            #   run: |
-            #       rm -rf @girs
-            #       mkdir -p @girs
-            #       cp -R external/ags-types/@girs/* @girs/
-            #       rm -rf external/ags-types
+            - name: Checkout with ags-types submodule
+              uses: actions/checkout@v7.0.1
+              with:
+                  submodules: true
+
+            - name: Provide the Astal GJS package
+              # package.json depends on 'astal' via the file: path
+              # /usr/share/astal/gjs; the runner needs it before npm install.
+              run: sudo git clone --depth 1 https://github.com/Jas-SinghFSU/astalgjs.git /usr/share/astal
 
             - name: Node Setup
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v7.1.0
               with:
-                  node-version: '21'
+                  node-version: "26"
 
-            - name: Install Dependencies
-              run: npm install
+            - name: Bootstrap dependencies
+              # Installs npm packages, verifies the astal dependency layout,
+              # and copies the GIR type declarations (incl. overrides) into
+              # @girs/ — the same path a contributor follows.
+              run: npm run bootstrap
 
             - name: ESLint
               run: npm run lint
 
-            # - name: Type Check
-            #   run: npx tsc --noEmit --pretty --extendedDiagnostics
+            - name: Type check
+              run: npm run typecheck
+
+            - name: Tests
+              run: npm test

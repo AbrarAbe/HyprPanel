@@ -60,11 +60,13 @@ npm run typecheck   # or: npx tsc --noEmit
 ```
 
 Type checking works against the GIR declarations in `@girs/` (created by
-`npm run bootstrap`). The current baseline is **one error, in third-party
-code**: `binding.ts(121)` inside the system-installed astal package
-(`/usr/share/astal/gjs`), which this repository cannot fix — it predates the
-type-check baseline and fails with both old and regenerated AstalIO
-declarations. Project code type-checks cleanly.
+`npm run bootstrap`). `npm run typecheck` runs `scripts/typecheck.sh`, which
+fails on any type error in project code but tolerates errors reported inside
+the third-party Astal GJS package (`/usr/share/astal/gjs`) — that package's
+internal errors are the documented baseline (one at the time of writing: the
+`binding.ts(121)` disconnect overload, present with both old and regenerated
+AstalIO declarations) and unfixable in this repository. To see the raw
+compiler output at any time, run `npx tsc --noEmit` directly.
 
 ### GIR declaration overrides
 
@@ -125,6 +127,15 @@ npm run lint:fix
 npm run format
 ```
 
+## Continuous integration
+
+Pull requests to `master` run `.github/workflows/ci.yml`: the
+`ags-types` submodule is checked out, the Astal GJS package is cloned to
+`/usr/share/astal` (required by the `astal` file dependency), and then
+`npm run bootstrap`, `npm run lint`, `npm run typecheck`, and `npm test` run
+in order on Node 26. The AGS bundle is intentionally not built in CI —
+`meson compile -C build` remains a local gate.
+
 ## Dead-code review
 
 ```sh
@@ -137,6 +148,5 @@ Review Knip output before deleting files. Some reported unused dependencies are 
 
 - One third-party type-check baseline error in the system astal package (see
   Type checking above).
-- No automated tests.
 - The README wiki links may be stale.
 - `npm audit` currently reports 10 vulnerabilities in development dependencies.
