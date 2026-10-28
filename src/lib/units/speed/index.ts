@@ -1,4 +1,4 @@
-import { SpeedUnit } from './types';
+import type { SpeedUnit } from './types';
 
 export class SpeedConverter {
     private readonly _value: number;

@@ -120,16 +120,16 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 **Description:** The repository has no automated tests. Add a minimal test runner and use it to cover the pure helpers that carry real logic, establishing the pattern before bigger refactors land.
 
 **Acceptance criteria:**
-- [ ] `npm test` runs the suite and exits non-zero on failure.
-- [ ] The runner handles TypeScript sources directly with at most one new dev dependency.
-- [ ] Tests exist for `src/lib/string/formatters.ts`, `src/lib/path/helpers.ts`, `src/lib/validation/colors.ts`, and `src/lib/units/*` conversions.
-- [ ] Test files live under `tests/` and mirror the `src/` layout.
-- [ ] `package.json` exposes `test`, and `docs/development.md` documents how to run a single test file.
+- [x] `npm test` runs the suite and exits non-zero on failure. *(78 tests across 7 files; mutation check — breaking `capitalizeFirstLetter` — failed the suite with exit 1 and 6 failing tests, restored to green.)*
+- [x] The runner handles TypeScript sources directly with at most one new dev dependency. *(Zero new dependencies: Node 26's native type stripping + `node:test`. This exceeds the plan's `tsx` allowance; required marking type-only imports as `import type` in 6 source files so Node erases them — behavior-preserving.)*
+- [x] Tests exist for `src/lib/string/formatters.ts`, `src/lib/path/helpers.ts`, `src/lib/validation/colors.ts`, and `src/lib/units/*` conversions. *(`units/time` is deliberately excluded: it is a module-level polling side effect requiring the GJS runtime, not a conversion helper — documented in docs/development.md.)*
+- [x] Test files live under `tests/` and mirror the `src/` layout.
+- [x] `package.json` exposes `test`, and `docs/development.md` documents how to run a single test file.
 
 **Verification:**
-- [ ] `npm test` passes.
-- [ ] Deliberately breaking one helper makes `npm test` fail (proves the harness is wired to the source, not a stub).
-- [ ] `npm run lint` clean.
+- [x] `npm test` passes. *(78/78, exit 0.)*
+- [x] Deliberately breaking one helper makes `npm test` fail (proves the harness is wired to the source, not a stub). *(6 failures, exit 1; restored and green.)*
+- [x] `npm run lint` clean. *(Tests are outside the ESLint scope (`!src` only); the 6 touched src files lint clean.)*
 
 **Dependencies:** Task 2 (tests should be type-clean)
 

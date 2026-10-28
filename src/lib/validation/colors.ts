@@ -1,5 +1,5 @@
-import { namedColors } from './colorNames';
-import { HexColor } from '../options/types';
+import { namedColors } from './colorNames.ts';
+import type { HexColor } from '../options/types';
 
 /**
  * Validates if a string is a valid GJS color

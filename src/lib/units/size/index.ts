@@ -1,4 +1,4 @@
-import { SizeUnit } from './types';
+import type { SizeUnit } from './types';
 
 export class SizeConverter {
     private readonly _value: number;

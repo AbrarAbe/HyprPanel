@@ -1,4 +1,4 @@
-import { TemperatureUnit } from './types';
+import type { TemperatureUnit } from './types';
 
 export class TemperatureConverter {
     private readonly _value: number;
