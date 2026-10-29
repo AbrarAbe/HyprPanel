@@ -57,6 +57,13 @@ git submodule update --init --recursive
 log "Installing Node dependencies..."
 npm install
 
+# Some npm versions skip absolute-path file dependencies without an error;
+# make sure the astal package is linked into node_modules either way.
+if [ ! -e node_modules/astal/package.json ] && [ -f /usr/share/astal/gjs/package.json ]; then
+    log "Linking the Astal GJS package into node_modules..."
+    ln -s /usr/share/astal/gjs node_modules/astal
+fi
+
 # --- 4. Verify the astal dependency path ----------------------------------
 # The 'astal' entry in package.json must resolve to a directory containing
 # package.json. Verify it exists so failures surface here with a clear
