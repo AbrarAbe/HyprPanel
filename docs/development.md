@@ -21,7 +21,13 @@ sudo meson install -C build
 
 The bootstrap script is idempotent — run it again any time the submodule or
 Node dependencies feel stale. It checks for `meson`, `ninja`, `ags`, `gjs`,
-and `git` up front and fails with a clear message if one is missing.
+and `git` up front and fails with a clear message if one is missing. For a
+Node-only setup (lint, typecheck, tests — no bundle build), the build-tool
+checks can be skipped:
+
+```sh
+npm run bootstrap -- --skip-build-tools
+```
 
 ## Prerequisites
 

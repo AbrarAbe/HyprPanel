@@ -6,9 +6,19 @@
 # declarations into the gitignored @girs/ directory where the TypeScript
 # compiler can find them.
 #
-# Usage: npm run bootstrap
+# Usage: npm run bootstrap [-- --skip-build-tools]
+# --skip-build-tools skips the meson/ninja/ags/gjs prerequisite checks for
+# workflows that only need Node-side quality gates (lint, typecheck, tests).
 
 set -euo pipefail
+
+skip_build_tools=false
+for arg in "$@"; do
+    case "$arg" in
+    --skip-build-tools) skip_build_tools=true ;;
+    *) fail "Unknown option: $arg" ;;
+    esac
+done
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
@@ -25,9 +35,15 @@ fail() {
 # --- 1. Check build prerequisites -----------------------------------------
 log "Checking build prerequisites..."
 
-for bin in node npm meson ninja ags gjs git; do
+for bin in node npm git; do
     command -v "$bin" >/dev/null 2>&1 || fail "'$bin' not found in PATH. Install it and re-run."
 done
+
+if [ "$skip_build_tools" = false ]; then
+    for bin in meson ninja ags gjs; do
+        command -v "$bin" >/dev/null 2>&1 || fail "'$bin' not found in PATH. Install it and re-run (or use --skip-build-tools for Node-only setup)."
+    done
+fi
 
 # --- 2. Register the ags-types submodule ----------------------------------
 # .gitmodules declares external/ags-types, which provides the @girs type

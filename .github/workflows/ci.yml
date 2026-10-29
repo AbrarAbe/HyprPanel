@@ -28,8 +28,9 @@ jobs:
             - name: Bootstrap dependencies
               # Installs npm packages, verifies the astal dependency layout,
               # and copies the GIR type declarations (incl. overrides) into
-              # @girs/ — the same path a contributor follows.
-              run: npm run bootstrap
+              # @girs/ — the same path a contributor follows. Build tools are
+              # skipped: this job runs the Node-side quality gates only.
+              run: npm run bootstrap -- --skip-build-tools
 
             - name: ESLint
               run: npm run lint
