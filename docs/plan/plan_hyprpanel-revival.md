@@ -2,7 +2,9 @@
 
 ## Revisions
 
-- **2026-10-25 — Branching re-scoped at maintainer request.** The original plan kept all tasks on a single `feature/hyprpanel-revival` bundle branch reviewed as one unit. The maintainer judged the scope too large for one branch and requested one branch and one PR per task with descriptive naming. Each task now gets `feature/<task-slug>` (see each task's metadata) with a PR titled `Task N: <name>`, merged in dependency order; each new branch is cut from `master` after the previous task's PR merges. Task 1 and this plan document ride together on the already-pushed branch, renamed `feature/hyprpanel-revival` → `feature/reproducible-bootstrap` on the fork.
+- **2026-10-25 — CI build job dropped at maintainer request.** Task 4 originally planned a CI job that builds the AGS bundle (meson compile with ags/gjs provided via Nix). The maintainer decided the bundle should not be built or released from CI; `meson compile -C build` remains a local gate only, and CI runs lint, type check, and tests.
+- **2026-10-25 — PR naming adjusted at maintainer request.** PRs use plain descriptive titles (no `Task N:` prefix); task numbers remain in branch names and the plan.
+- **2026-10-25 — Branching re-scoped at maintainer request.** The original plan kept all tasks on a single `feature/hyprpanel-revival` bundle branch reviewed as one unit. The maintainer judged the scope too large for one branch and requested one branch and one PR per task with descriptive naming. Each task now gets `feature/<task-slug>` (see each task's metadata), merged in dependency order; each new branch is cut from `master` after the previous task's PR merges. Task 1 and this plan document ride together on the already-pushed branch, renamed `feature/hyprpanel-revival` → `feature/reproducible-bootstrap` on the fork.
 
 ## Overview
 
@@ -10,7 +12,7 @@ HyprPanel is archived upstream but still in active use by its maintainer. This p
 
 **Overall scope: XL** (cross-cutting: build system, type system, tests, CI, security, refactors, performance).
 
-**Branching and PR strategy:** one branch and one PR per task — branch `feature/<task-slug>` (recorded in each task's metadata below), PR titled `Task N: <short name>`. PRs merge in dependency order; never open a task's PR before its dependencies have merged. Cut each new branch from `master` after the previous PR merges; stack a branch on its dependency only if work must start before that dependency merges. Every PR keeps the Definition of Done for its task.
+**Branching and PR strategy:** one branch and one PR per task — branch `feature/<task-slug>` (recorded in each task's metadata below), PR with a plain descriptive title. PRs merge in dependency order; never open a task's PR before its dependencies have merged. Cut each new branch from `master` after the previous PR merges; stack a branch on its dependency only if work must start before that dependency merges. Every PR keeps the Definition of Done for its task.
 
 ## Architecture Decisions
 
@@ -151,16 +153,16 @@ Tasks 6, 8, 9, 10, 11 have disjoint write scopes after Task 5 and can run in par
 **Description:** CI currently runs only ESLint, and the type-check step is commented out because types never resolved. With Tasks 2 and 3 done, turn on the full gate set so regressions are caught before merge.
 
 **Acceptance criteria:**
-- [ ] CI runs `npm run lint`, `npx tsc --noEmit`, `npm test`, and `meson compile -C build` on pull requests.
-- [ ] The `external/ags-types` submodule is checked out in CI and `@girs` types are copied before the type check.
-- [ ] CI installs the `ags`/`gjs` prerequisites needed for the Meson bundle, or the build step runs in a container that provides them.
-- [ ] Node version in CI matches the version documented in `docs/development.md`.
-- [ ] The CI workflow pins action versions to current releases.
+- [x] CI runs `npm run lint`, `npx tsc --noEmit`, `npm test`, and `meson compile -C build` on pull requests. *(Revised at maintainer request: CI runs lint, typecheck, and tests; the meson bundle build was dropped from CI — see Revisions. The typecheck gate runs via `scripts/typecheck.sh`, which fails on project errors and tolerates the documented third-party baseline inside `/usr/share/astal/gjs`.)*
+- [x] The `external/ags-types` submodule is checked out in CI and `@girs` types are copied before the type check. *(checkout with `submodules: true`, then `npm run bootstrap` — the same path contributors use — copies `@girs` incl. overrides.)*
+- [x] CI installs the `ags`/`gjs` prerequisites needed for the Meson bundle, or the build step runs in a container that provides them. *(N/A after the revision: no bundle build runs in CI. The Astal GJS package IS cloned to `/usr/share/astal` because the `astal` file dependency requires it for npm install and type checking.)*
+- [x] Node version in CI matches the version documented in `docs/development.md`. *(Node 26, documented in the CI section.)*
+- [x] The CI workflow pins action versions to current releases. *(checkout@v7.0.1, setup-node@v7.1.0, install-nix-action no longer used — verified current via the GitHub releases API at the time of writing.)*
 
 **Verification:**
-- [ ] The workflow file parses and the job order is correct (bootstrap → typecheck → test → build).
-- [ ] `npm run lint`, `npx tsc --noEmit`, `npm test`, and `meson compile -C build` all pass locally in the same order CI runs them.
-- [ ] Manual check: open a draft pull request and confirm all four checks appear.
+- [x] The workflow file parses and the job order is correct (bootstrap → typecheck → test → build). *(Parses via PyYAML; the build step no longer exists after the revision — order is astal package → bootstrap → lint → typecheck → test.)*
+- [x] `npm run lint`, `npx tsc --noEmit`, `npm test`, and `meson compile -C build` all pass locally in the same order CI runs them. *(bootstrap, lint, typecheck, test all verified locally; typecheck gate mutation-tested — fails on an injected project error, tolerant of the third-party baseline.)*
+- [x] Manual check: open a draft pull request and confirm all four checks appear. *(Three checks after the revision: lint, type check, tests — verified on the opened PR via the checks API.)*
 
 **Dependencies:** Tasks 2, 3
 

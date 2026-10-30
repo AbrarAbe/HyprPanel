@@ -1,4 +1,5 @@
-import { Process, Variable } from 'astal';
+import type AstalIO from 'gi://AstalIO?version=0.1';
+import type { Variable } from 'astal';
 
 export interface GpuServiceCtor {
     frequency?: Variable<number>;
@@ -17,7 +18,7 @@ export type GPUStat = {
     'enforced.power.limit': number;
     'memory.used': number;
     'memory.total': number;
-    processes: Process[];
+    processes: AstalIO.Process[];
 };
 
 export type AMDGpuStat = {

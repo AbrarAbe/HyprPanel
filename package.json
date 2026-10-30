@@ -7,7 +7,7 @@
         "bootstrap": "bash scripts/bootstrap.sh",
         "lint": "eslint --config .eslintrc.json .",
         "lint:fix": "eslint --config .eslintrc.json . --fix",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "bash scripts/typecheck.sh",
         "test": "node --test --experimental-test-module-mocks \"tests/**/*.test.ts\"",
         "format": "prettier --write 'modules/**/*.ts'",
         "knip": "knip"
