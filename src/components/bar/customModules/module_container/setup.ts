@@ -37,6 +37,8 @@ export function initActionListener(
             return;
         }
 
+        // moduleExecuteOnAction is a user-defined command from configuration
+        // and may contain shell syntax, so it must run through a shell.
         execAsync(moduleExecuteOnAction).then((cmdOutput) => {
             commandOutput.set(cmdOutput);
         });
