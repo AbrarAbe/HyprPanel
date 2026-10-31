@@ -1,11 +1,9 @@
-import AstalNotifd from 'gi://AstalNotifd';
-import { exec, execAsync, GLib } from 'astal';
-import icons from 'src/lib/icons/icons';
-import { distroIcons } from 'src/core/system/distroIcons';
-import { distro } from 'src/core/system/osInfo';
-import { CommandResult, NotificationArgs, ServiceStatus } from './types';
-
-AstalNotifd.get_default();
+import { execAsync } from 'astal';
+import icons from '../../lib/icons/icons.ts';
+import { distroIcons } from './distroIcons.ts';
+import { distro } from './osInfo.ts';
+import { CommandRunner } from './commandRunner.ts';
+import type { CommandResult, NotificationArgs, ServiceStatus } from './types.ts';
 
 export class SystemUtilities {
     /*******************************************
@@ -34,13 +32,12 @@ export class SystemUtilities {
      */
     public static checkDependencies(...bins: string[]): boolean {
         const missing = bins.filter((bin) => {
-            try {
-                exec(`which ${bin}`);
-                return false;
-            } catch (e) {
-                console.debug(e);
+            if (!CommandRunner.validateIdentifier(bin)) {
                 return true;
             }
+
+            const { exitCode } = CommandRunner.runSync(['which', bin]);
+            return exitCode !== 0;
         });
 
         if (missing.length > 0) {
@@ -64,7 +61,11 @@ export class SystemUtilities {
      */
     public static checkExecutable(executables: string[]): boolean {
         for (const exe of executables) {
-            const { exitCode } = this._runCommand(`which ${exe}`);
+            if (!CommandRunner.validateIdentifier(exe)) {
+                continue;
+            }
+
+            const { exitCode } = CommandRunner.runSync(['which', exe]);
 
             if (exitCode === 0) {
                 return true;
@@ -74,20 +75,30 @@ export class SystemUtilities {
     }
 
     /**
-     * Checks if any of the given libraries is installed using `pkg-config`.
+     * Checks if any of the given libraries is installed using `ldconfig`.
      *
-     * @description Uses `pkg-config --exists <lib>` to determine if a library is installed.
+     * @description Runs `ldconfig -p` once and checks each library name against its output,
+     * avoiding shell interpolation entirely.
      *
      * @param libraries - The list of libraries to check.
      */
     public static checkLibrary(libraries: string[]): boolean {
-        for (const lib of libraries) {
-            const { exitCode, stdout } = this._runCommand(`sh -c "ldconfig -p | grep ${lib}"`);
+        const { exitCode, stdout } = CommandRunner.runSync(['ldconfig', '-p']);
 
-            if (exitCode === 0 && stdout.length > 0) {
+        if (exitCode !== 0) {
+            return false;
+        }
+
+        for (const lib of libraries) {
+            if (!CommandRunner.validateIdentifier(lib)) {
+                continue;
+            }
+
+            if (stdout.includes(lib)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -100,7 +111,11 @@ export class SystemUtilities {
      */
     public static checkServiceStatus(services: string[]): ServiceStatus {
         for (const svc of services) {
-            const activeResult = SystemUtilities.runCommand(`systemctl is-active ${svc}`);
+            if (!CommandRunner.validateIdentifier(svc)) {
+                continue;
+            }
+
+            const activeResult = CommandRunner.runSync(['systemctl', 'is-active', svc]);
             const activeStatus = activeResult.stdout;
 
             if (activeStatus === 'active') {
@@ -108,7 +123,7 @@ export class SystemUtilities {
             }
 
             if (activeStatus === 'inactive' || activeStatus === 'failed') {
-                const enabledResult = SystemUtilities.runCommand(`systemctl is-enabled ${svc}`);
+                const enabledResult = CommandRunner.runSync(['systemctl', 'is-enabled', svc]);
                 const enabledStatus = enabledResult.stdout;
 
                 if (
@@ -182,43 +197,33 @@ export class SystemUtilities {
     /**
      * Spawns a command line synchronously and returns the exit code and output.
      *
-     * @description Executes a shell command using GLib.spawn_command_line_sync and extracts the exit code, stdout, and stderr.
+     * @description Executes a command using the safe CommandRunner and extracts the exit code, stdout, and stderr.
      *
-     * @param command - The command to execute.
+     * @param args - The program and its arguments.
      */
-    public static runCommand(command: string): CommandResult {
-        return this._runCommand(command);
+    public static runCommand(args: string[]): CommandResult {
+        return CommandRunner.runSync(args);
     }
 
-    private static _runCommand(command: string): CommandResult {
-        const decoder = new TextDecoder();
-        const decodeOutput = (output: Uint8Array): string => decoder.decode(output).trim();
-
-        const [, out, err, exitCode] = GLib.spawn_command_line_sync(command);
-        const stdout = out ? decodeOutput(out) : '';
-        const stderr = err ? decodeOutput(err) : '';
-        return {
-            exitCode,
-            stdout,
-            stderr,
-        };
-    }
+    /*******************************************
+     *               Notify                  *
+     *******************************************/
 
     private static _notify(notifPayload: NotificationArgs): void {
-        let command = 'notify-send';
+        const args: string[] = ['notify-send'];
 
-        command += ` "${notifPayload.summary} "`;
+        if (notifPayload.appName !== undefined) args.push('-a', notifPayload.appName);
+        if (notifPayload.iconName !== undefined) args.push('-i', notifPayload.iconName);
+        if (notifPayload.urgency !== undefined) args.push('-u', notifPayload.urgency);
+        if (notifPayload.timeout !== undefined) args.push('-t', String(notifPayload.timeout));
+        if (notifPayload.category !== undefined) args.push('-c', notifPayload.category);
+        if (notifPayload.transient !== undefined) args.push('-e');
+        if (notifPayload.id !== undefined) args.push('-r', String(notifPayload.id));
 
-        if (notifPayload.body !== undefined) command += ` "${notifPayload.body}" `;
-        if (notifPayload.appName !== undefined) command += ` -a "${notifPayload.appName}"`;
-        if (notifPayload.iconName !== undefined) command += ` -i "${notifPayload.iconName}"`;
-        if (notifPayload.urgency !== undefined) command += ` -u "${notifPayload.urgency}"`;
-        if (notifPayload.timeout !== undefined) command += ` -t ${notifPayload.timeout}`;
-        if (notifPayload.category !== undefined) command += ` -c "${notifPayload.category}"`;
-        if (notifPayload.transient !== undefined) command += ' -e';
-        if (notifPayload.id !== undefined) command += ` -r ${notifPayload.id}`;
+        args.push(notifPayload.summary ?? '');
+        if (notifPayload.body !== undefined) args.push(notifPayload.body);
 
-        execAsync(command).catch((err) => {
+        CommandRunner.run(args).catch((err) => {
             console.error(`Failed to send notification: ${err.message}`);
         });
     }
