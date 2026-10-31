@@ -1,4 +1,5 @@
-import { bind, exec, Variable } from 'astal';
+import { bind, Variable } from 'astal';
+import { CommandRunner } from 'src/core/system/commandRunner';
 import { FunctionPoller } from 'src/lib/poller/FunctionPoller';
 import { GpuServiceCtor, GPUStat, AMDGpuStat, GpuVendor } from './types';
 
@@ -47,12 +48,12 @@ class GpuUsageService {
      * Easily extendable for new vendors/tools.
      */
     private _detectGpuVendor(): void {
-        const vendorDetectionMap: Record<string, { cmd: string }> = {
+        const vendorDetectionMap: Record<string, { cmd: string[] }> = {
             nvidia: {
-                cmd: 'gpustat --json',
+                cmd: ['gpustat', '--json'],
             },
             amd: {
-                cmd: 'amdgpu_top --json --dump',
+                cmd: ['amdgpu_top', '--json', '--dump'],
             },
             // Add more vendors/tools here as needed
             // Maybe someone can add here the part for intel GPUs
@@ -60,7 +61,7 @@ class GpuUsageService {
 
         for (const [vendor, { cmd }] of Object.entries(vendorDetectionMap)) {
             try {
-                const result = exec(cmd);
+                const result = CommandRunner.runSync(cmd).stdout;
                 if (result && typeof result === 'string') {
                     this._gpuVendor = vendor as GpuVendor;
                     return;
@@ -94,7 +95,7 @@ class GpuUsageService {
      */
     private _calculateNvidiaUsage(): number {
         try {
-            const gpuStats = exec('gpustat --json');
+            const gpuStats = CommandRunner.runSync(['gpustat', '--json']).stdout;
             if (typeof gpuStats !== 'string') {
                 return 0;
             }
@@ -125,7 +126,7 @@ class GpuUsageService {
      */
     private _calculateAmdUsage(): number {
         try {
-            const gpuStats = exec('amdgpu_top --json --dump');
+            const gpuStats = CommandRunner.runSync(['amdgpu_top', '--json', '--dump']).stdout;
             if (typeof gpuStats !== 'string') {
                 return 0;
             }

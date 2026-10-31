@@ -12,6 +12,8 @@ const DirectoryLink = ({ directoryItem, ...props }: DirectoryLinkProps): JSX.Ele
             onClick={(_, event) => {
                 if (isPrimaryClick(event)) {
                     App.get_window('dashboardmenu')?.set_visible(false);
+                    // directoryItem.command.get() is a user-defined command from configuration
+                    // and may contain shell syntax.
                     execAsync(directoryItem.command.get());
                 }
             }}

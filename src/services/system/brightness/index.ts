@@ -1,12 +1,20 @@
-import { exec, GObject, monitorFile, property, readFileAsync, register } from 'astal';
+import { GObject, monitorFile, property, readFileAsync, register } from 'astal';
+import { CommandRunner } from 'src/core/system/commandRunner';
 import { SystemUtilities } from 'src/core/system/SystemUtilities';
 
 const isBrightnessAvailable = SystemUtilities.checkExecutable(['brightnessctl']);
 
-const get = (args: string): number => (isBrightnessAvailable ? Number(exec(`brightnessctl ${args}`)) : 0);
-const screen = isBrightnessAvailable ? exec('bash -c "ls -w1 /sys/class/backlight | head -1"') : '';
+const get = (args: string[]): number =>
+    isBrightnessAvailable ? Number(CommandRunner.runSync(['brightnessctl', ...args]).stdout) : 0;
+
+const screen = isBrightnessAvailable
+    ? CommandRunner.runSync(['ls', '-1', '/sys/class/backlight']).stdout.trim().split('\n')[0]
+    : '';
 const kbd = isBrightnessAvailable
-    ? exec('bash -c "ls -w1 /sys/class/leds | grep \'::kbd_backlight$\' | head -1"')
+    ? CommandRunner.runSync(['ls', '-1', '/sys/class/leds'])
+          .stdout.trim()
+          .split('\n')
+          .filter((d) => d.endsWith('::kbd_backlight'))[0]
     : '';
 
 /**
@@ -47,10 +55,10 @@ export default class BrightnessService extends GObject.Object {
         return BrightnessService.instance;
     }
 
-    #kbdMax = kbd?.length ? get(`--device ${kbd} max`) : 0;
-    #kbd = kbd?.length ? get(`--device ${kbd} get`) : 0;
-    #screenMax = screen?.length ? get(`--device ${screen} max`) : 0;
-    #screen = screen?.length ? get(`--device ${screen} get`) / (get(`--device ${screen} max`) || 1) : 0;
+    #kbdMax = kbd?.length ? get(['--device', kbd, 'max']) : 0;
+    #kbd = kbd?.length ? get(['--device', kbd, 'get']) : 0;
+    #screenMax = screen?.length ? get(['--device', screen, 'max']) : 0;
+    #screen = screen?.length ? get(['--device', screen, 'get']) / (get(['--device', screen, 'max']) || 1) : 0;
 
     /**
      * Gets the keyboard backlight brightness level
@@ -80,7 +88,7 @@ export default class BrightnessService extends GObject.Object {
     public set kbd(value: number) {
         if (value < 0 || value > this.#kbdMax || !kbd?.length) return;
 
-        SystemUtilities.sh(`brightnessctl -d ${kbd} s ${value} -q`).then(() => {
+        CommandRunner.run(['brightnessctl', '-d', kbd, 's', String(value), '-q']).then(() => {
             this.#kbd = value;
             this.notify('kbd');
         });
@@ -100,11 +108,16 @@ export default class BrightnessService extends GObject.Object {
 
         if (percent > 1) brightnessPct = 1;
 
-        SystemUtilities.sh(`brightnessctl set ${Math.round(brightnessPct * 100)}% -d ${screen} -q`).then(
-            () => {
-                this.#screen = brightnessPct;
-                this.notify('screen');
-            },
-        );
+        CommandRunner.run([
+            'brightnessctl',
+            'set',
+            `${Math.round(brightnessPct * 100)}%`,
+            '-d',
+            screen,
+            '-q',
+        ]).then(() => {
+            this.#screen = brightnessPct;
+            this.notify('screen');
+        });
     }
 }

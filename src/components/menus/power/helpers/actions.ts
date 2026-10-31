@@ -50,6 +50,7 @@ class PowerMenu extends GObject.Object {
 
     public exec = (): void => {
         App.get_window('verification')?.set_visible(false);
+        // this.#cmd is a user-defined custom command and may contain shell syntax.
         execAsync(this.#cmd);
     };
 }

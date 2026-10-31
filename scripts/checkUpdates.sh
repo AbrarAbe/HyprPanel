@@ -30,26 +30,21 @@ check_arch_updates() {
     fi
 
     if has_param "-tooltip" "$@"; then
-        command=" | head -n 50"
-        official_updates=""
-        aur_updates=""
         wait_for_process_to_finish "checkupdates"
+        aur_updates=$(" -Qum" | head -n 50)
+        official_updates=$(checkupdates | head -n 50)
     else
-        command="2>/dev/null | wc -l"
         official_updates=0
         aur_updates=0
-    fi
 
-    aur_command="$aur_helper -Qum $command"
-    official_command="checkupdates $command"
-
-    if has_param "-y" "$@"; then
-        aur_updates=$(eval "$aur_command")
-    elif has_param "-p" "$@"; then
-        official_updates=$(eval "$official_command")
-    else
-        aur_updates=$(eval "$aur_command")
-        official_updates=$(eval "$official_command")
+        if has_param "-y" "$@"; then
+            aur_updates=$(" -Qum" 2>/dev/null | wc -l)
+        elif has_param "-p" "$@"; then
+            official_updates=$(checkupdates 2>/dev/null | wc -l)
+        else
+            aur_updates=$(" -Qum" 2>/dev/null | wc -l)
+            official_updates=$(checkupdates 2>/dev/null | wc -l)
+        fi
     fi
 
     if has_param "-tooltip" "$@"; then
