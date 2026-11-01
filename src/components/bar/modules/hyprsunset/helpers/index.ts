@@ -1,6 +1,9 @@
 import { execAsync, Variable } from 'astal';
 import options from 'src/configuration';
 
+// All commands in this module require a shell: pgrep with pipes,
+// nohup with backgrounding (&), and pkill. They cannot be expressed
+// as simple argument arrays.
 const { temperature } = options.bar.customModules.hyprsunset;
 
 /**

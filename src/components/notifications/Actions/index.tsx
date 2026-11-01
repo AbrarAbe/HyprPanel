@@ -14,6 +14,8 @@ const ActionButton = ({ notification, action }: ActionButtonProps): JSX.Element 
                 }
 
                 if (action.id.includes('scriptAction:-')) {
+                    // action.id.replace('scriptAction:-', '') is a user-defined script action
+                    // and may contain shell syntax.
                     execAsync(`${action.id.replace('scriptAction:-', '')}`).catch((err) =>
                         console.error(err),
                     );

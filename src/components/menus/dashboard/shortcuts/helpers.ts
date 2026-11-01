@@ -25,6 +25,7 @@ export const getRecordingPath = (): string => options.menus.dashboard.recording.
  */
 export const executeCommand = async (command: string): Promise<void> => {
     try {
+        // command comes from user-defined shortcut configuration and may contain shell syntax.
         await execAsync(`bash -c '${command}'`);
     } catch (err) {
         console.error('Command failed:', command);
@@ -44,6 +45,7 @@ export const handleClick = (action: string, tOut: number = 0): void => {
     App.get_window('dashboardmenu')?.set_visible(false);
 
     timeout(tOut, () => {
+        // action comes from user-defined shortcut configuration and may contain shell syntax.
         execAsync(`bash -c "${action}"`)
             .then((res) => res)
             .catch((err) => console.error(err));

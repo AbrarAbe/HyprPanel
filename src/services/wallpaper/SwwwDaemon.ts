@@ -1,4 +1,4 @@
-import { execAsync } from 'astal/process';
+import { CommandRunner } from 'src/core/system/commandRunner';
 import { SystemUtilities } from 'src/core/system/SystemUtilities';
 
 /**
@@ -45,7 +45,7 @@ export class SwwwDaemon {
      */
     public async stop(): Promise<void> {
         try {
-            await execAsync('swww kill');
+            await CommandRunner.run(['swww', 'kill']);
             this._isRunning = false;
         } catch (err) {
             await this._handleStopError(err);
@@ -57,7 +57,7 @@ export class SwwwDaemon {
      */
     private async _checkIfRunning(): Promise<boolean> {
         try {
-            await execAsync('swww query');
+            await CommandRunner.run(['swww', 'query']);
             return true;
         } catch {
             return false;
@@ -69,7 +69,7 @@ export class SwwwDaemon {
      */
     private async _startNewDaemon(): Promise<boolean> {
         try {
-            await execAsync('swww-daemon');
+            await CommandRunner.run(['swww-daemon']);
 
             const ready = await this._waitForReady();
             this._isRunning = ready;
@@ -92,9 +92,10 @@ export class SwwwDaemon {
      */
     private async _cleanupFailedDaemon(): Promise<void> {
         try {
-            await execAsync('swww kill');
-        } catch {}
-        console.error('swww-daemon failed to become ready');
+            await CommandRunner.run(['swww', 'kill']);
+        } catch {
+            console.error('swww-daemon failed to become ready');
+        }
     }
 
     /**
@@ -121,7 +122,7 @@ export class SwwwDaemon {
 
         for (let i = 0; i < maxAttempts; i++) {
             try {
-                await execAsync('swww query');
+                await CommandRunner.run(['swww', 'query']);
                 return true;
             } catch {
                 if (i < maxAttempts - 1) {

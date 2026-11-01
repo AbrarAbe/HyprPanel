@@ -23,6 +23,7 @@ export const storageService = new StorageService({ pathsToMonitor: paths });
  */
 export const handleClick = (): void => {
     App.get_window('dashboardmenu')?.set_visible(false);
+    // ${terminal} -e btop requires shell interpretation for the -e flag.
     execAsync(`bash -c "${terminal} -e btop"`).catch((err) => `Failed to open btop: ${err}`);
 };
 

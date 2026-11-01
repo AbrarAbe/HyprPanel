@@ -24,6 +24,8 @@ export const handleClick = (action: PowerOptions): void => {
     App.get_window('dashboardmenu')?.set_visible(false);
 
     if (!confirmation.get()) {
+        // actions[action] is a user-defined power action (e.g. systemctl poweroff)
+        // and may contain shell syntax.
         execAsync(actions[action]).catch((err) =>
             console.error(`Failed to execute ${action} command. Error: ${err}`),
         );

@@ -11,6 +11,7 @@ export const Label = ({
             return (
                 <button
                     className="options-sublabel-link"
+                    // xdg-open requires shell interpretation.
                     onClick={() => execAsync(`bash -c 'xdg-open ${subtitleLink}'`)}
                     halign={Gtk.Align.START}
                     valign={Gtk.Align.CENTER}

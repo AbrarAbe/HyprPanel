@@ -18,6 +18,7 @@ export const PowerButton = (action: PowerOptions): JSX.Element => {
         App.get_window('powerdropdownmenu')?.set_visible(false);
 
         if (!confirmation.get()) {
+            // actions[action] is a user-defined power action and may contain shell syntax.
             execAsync(actions[action]).catch((err) =>
                 console.error(`Failed to execute ${action} command. Error: ${err}`),
             );

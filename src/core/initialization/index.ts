@@ -1,4 +1,4 @@
-import { execAsync } from 'astal';
+import { CommandRunner } from 'src/core/system/commandRunner';
 import AstalHyprland from 'gi://AstalHyprland?version=0.1';
 import { Bar } from 'src/components/bar';
 import { forMonitors } from 'src/components/bar/utils/monitors';
@@ -56,7 +56,7 @@ export class InitializationService {
      */
     private static async _initializeStartupScripts(): Promise<void> {
         try {
-            execAsync(`python3 ${SRC_DIR}/scripts/bluetooth.py`);
+            CommandRunner.run(['python3', `${SRC_DIR}/scripts/bluetooth.py`]);
         } catch (error) {
             console.error('Failed to initialize startup scripts:', error);
         }
