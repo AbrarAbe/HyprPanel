@@ -1,45 +1,60 @@
-import { AstalIO, Binding, interval, Variable } from 'astal';
-import options from 'src/configuration';
-import { BarModule } from '../options/types';
-import { getLayoutItems } from '../bar/helpers';
-
-const { layouts } = options.bar;
+import type { AstalIO, Binding } from 'astal';
+import { interval, Variable } from 'astal';
+import type { BarModule } from '../options/types';
 
 /**
  * A class that manages the polling lifecycle, including interval management and execution state.
  */
 export class Poller {
     private _intervalInstance: AstalIO.Time | null = null;
+    private _deriveSubscription: { drop: () => void } | null = null;
     private _isExecuting: boolean = false;
     private _pollingFunction: () => Promise<void>;
 
+    private readonly _pollingInterval: Binding<number>;
+    private readonly _trackers: Binding<unknown>[];
+
     /**
      * Creates an instance of Poller.
-     * @param _pollingInterval - The interval at which polling occurs.
-     * @param _trackers - An array of trackers to monitor.
+     * @param pollingInterval - The interval at which polling occurs.
+     * @param trackers - An array of trackers to monitor.
      * @param pollingFunction - The function to execute during each poll.
      */
     constructor(
-        private _pollingInterval: Binding<number>,
-        private _trackers: Binding<unknown>[],
+        pollingInterval: Binding<number>,
+        trackers: Binding<unknown>[],
         pollingFunction: () => Promise<void>,
     ) {
+        this._pollingInterval = pollingInterval;
+        this._trackers = trackers;
         this._pollingFunction = pollingFunction;
     }
 
     /**
      * Starts the polling process by setting up the interval.
+     *
+     * Idempotent: calling start() multiple times does not create multiple
+     * intervals. Any existing derive subscription is disconnected first.
      */
     public start(): void {
-        Variable.derive([this._pollingInterval, ...this._trackers], (intervalMs: number) => {
-            this._executePolling(intervalMs);
-        })();
+        this._disconnectDerive();
+
+        this._deriveSubscription = Variable.derive(
+            [this._pollingInterval, ...this._trackers],
+            (intervalMs: number) => {
+                this._executePolling(intervalMs);
+            },
+        );
     }
 
     /**
      * Stops the polling process and cleans up resources.
+     *
+     * Disconnects the Variable.derive subscription and cancels the interval.
      */
     public stop(): void {
+        this._disconnectDerive();
+
         if (this._intervalInstance !== null) {
             this._intervalInstance.cancel();
             this._intervalInstance = null;
@@ -49,8 +64,8 @@ export class Poller {
     /**
      * Initializes the polling based on module usage.
      *
-     * If not module is provided then we can safely assume that we want
-     * to always run the pollig interval.
+     * If no module is provided then we can safely assume that we want
+     * to always run the polling interval.
      *
      * @param moduleName - The name of the module to initialize.
      */
@@ -59,23 +74,15 @@ export class Poller {
             return this.start();
         }
 
-        const initialModules = getLayoutItems();
+        this.start();
+    }
 
-        if (initialModules.includes(moduleName)) {
-            this.start();
-        } else {
-            this.stop();
-        }
-
-        layouts.subscribe(() => {
-            const usedModules = getLayoutItems();
-
-            if (usedModules.includes(moduleName)) {
-                this.start();
-            } else {
-                this.stop();
-            }
-        });
+    /**
+     * Disconnects the Variable.derive subscription.
+     */
+    private _disconnectDerive(): void {
+        this._deriveSubscription?.drop();
+        this._deriveSubscription = null;
     }
 
     /**
