@@ -1,7 +1,6 @@
 import type { AstalIO, Binding } from 'astal';
 import { interval, Variable } from 'astal';
 import type { BarModule } from '../options/types';
-import { getLayoutItems } from '../bar/helpers.ts';
 
 /**
  * A class that manages the polling lifecycle, including interval management and execution state.
