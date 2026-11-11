@@ -1,6 +1,7 @@
 import type { AstalIO, Binding } from 'astal';
 import { interval, Variable } from 'astal';
 import type { BarModule } from '../options/types';
+import { getLayoutItems } from '../bar/helpers.ts';
 
 /**
  * A class that manages the polling lifecycle, including interval management and execution state.
@@ -8,26 +9,31 @@ import type { BarModule } from '../options/types';
 export class Poller {
     private _intervalInstance: AstalIO.Time | null = null;
     private _deriveSubscription: { drop: () => void } | null = null;
+    private _layoutsSubscription: (() => void) | null = null;
     private _isExecuting: boolean = false;
     private _pollingFunction: () => Promise<void>;
 
     private readonly _pollingInterval: Binding<number>;
     private readonly _trackers: Binding<unknown>[];
+    private readonly _layouts: Binding<unknown>;
 
     /**
      * Creates an instance of Poller.
      * @param pollingInterval - The interval at which polling occurs.
      * @param trackers - An array of trackers to monitor.
      * @param pollingFunction - The function to execute during each poll.
+     * @param layouts - The bar layouts binding, used to determine which modules are active.
      */
     constructor(
         pollingInterval: Binding<number>,
         trackers: Binding<unknown>[],
         pollingFunction: () => Promise<void>,
+        layouts: Binding<unknown>,
     ) {
         this._pollingInterval = pollingInterval;
         this._trackers = trackers;
         this._pollingFunction = pollingFunction;
+        this._layouts = layouts;
     }
 
     /**
@@ -70,11 +76,47 @@ export class Poller {
      * @param moduleName - The name of the module to initialize.
      */
     public initialize(moduleName?: BarModule): void {
+        // Disconnect any existing layouts subscription to ensure idempotency
+        this._layoutsSubscription?.();
+        this._layoutsSubscription = null;
+
         if (moduleName === undefined) {
             return this.start();
         }
 
-        this.start();
+        const layoutsValue = this._layouts.get() as Record<
+            string,
+            { left: string[]; middle: string[]; right: string[] }
+        >;
+        const usedModules: string[] = [];
+        Object.keys(layoutsValue).forEach((monitor) => {
+            const layout = layoutsValue[monitor];
+            usedModules.push(...(layout.left ?? []), ...(layout.middle ?? []), ...(layout.right ?? []));
+        });
+
+        if (usedModules.includes(moduleName)) {
+            this.start();
+        } else {
+            this.stop();
+        }
+
+        this._layoutsSubscription = this._layouts.subscribe(() => {
+            const layoutsValue = this._layouts.get() as Record<
+                string,
+                { left: string[]; middle: string[]; right: string[] }
+            >;
+            const usedModules: string[] = [];
+            Object.keys(layoutsValue).forEach((monitor) => {
+                const layout = layoutsValue[monitor];
+                usedModules.push(...(layout.left ?? []), ...(layout.middle ?? []), ...(layout.right ?? []));
+            });
+
+            if (usedModules.includes(moduleName)) {
+                this.start();
+            } else {
+                this.stop();
+            }
+        });
     }
 
     /**

@@ -3,7 +3,7 @@ import { describe, it, mock } from 'node:test';
 
 // Mock the astal module before importing Poller
 mock.module('astal', {
-    exports: {
+    namedExports: {
         Variable: {
             derive: (
                 bindings: unknown[],
@@ -21,14 +21,22 @@ mock.module('astal', {
     },
 });
 
+// Mock bar/helpers module (imported by Poller.ts via GIR type declarations)
+mock.module('../../../src/lib/bar/helpers.ts', {
+    namedExports: {
+        getLayoutItems: () => [],
+    },
+});
+
 const { Poller } = await import('../../../src/lib/poller/Poller.ts');
 
 function createPoller() {
     const pollingInterval: any = { get: () => 1000 };
     const trackers: any[] = [];
     const pollingFunction = async () => { };
+    const layoutsBinding: any = { get: () => [], subscribe: () => () => { } };
 
-    return new Poller(pollingInterval, trackers, pollingFunction);
+    return new Poller(pollingInterval, trackers, pollingFunction, layoutsBinding);
 }
 
 describe('Poller.start()', () => {
@@ -66,17 +74,23 @@ describe('Poller.initialize()', () => {
     });
 
     it('starts polling when module name is provided', () => {
-        const poller = createPoller();
+        const poller = new Poller(
+            { get: () => 1000 } as any,
+            [],
+            async () => { },
+            { get: () => ['cpu'], subscribe: () => () => { } } as any,
+        );
         poller.initialize('cpu');
 
         assert.ok(true);
     });
 
-    it('does not start polling when module name is provided', () => {
+    it('does not start polling when module name is not in layout', () => {
         const poller = new Poller(
             { get: () => 1000 } as any,
             [],
             async () => { },
+            { get: () => ['ram'], subscribe: () => () => { } } as any,
         );
         poller.initialize('cpu');
 
