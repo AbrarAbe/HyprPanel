@@ -9,3 +9,5 @@ prepare
 .direnv/
 
 pnpm-lock.yaml
+*.md
+!README.md
