@@ -1,4 +1,5 @@
 import type { AstalIO, Binding } from 'astal';
+import type { Subscribable } from 'astal/binding';
 import { interval, Variable } from 'astal';
 import type { BarModule } from '../options/types';
 
@@ -14,7 +15,7 @@ export class Poller {
 
     private readonly _pollingInterval: Binding<number>;
     private readonly _trackers: Binding<unknown>[];
-    private readonly _layouts: Binding<unknown>;
+    private readonly _layouts: Subscribable<unknown>;
 
     /**
      * Creates an instance of Poller.
@@ -27,7 +28,7 @@ export class Poller {
         pollingInterval: Binding<number>,
         trackers: Binding<unknown>[],
         pollingFunction: () => Promise<void>,
-        layouts: Binding<unknown>,
+        layouts: Subscribable<unknown>,
     ) {
         this._pollingInterval = pollingInterval;
         this._trackers = trackers;

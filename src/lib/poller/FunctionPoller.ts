@@ -2,6 +2,7 @@ import { BarModule } from '../options/types';
 import { Poller } from './Poller';
 import { Binding, Variable } from 'astal';
 import { GenericFunction } from './types';
+import options from '../../configuration';
 
 /**
  * A class that manages polling of a variable by executing a generic function at specified intervals.
@@ -43,7 +44,7 @@ export class FunctionPoller<Value, Parameters extends unknown[] = []> {
     ) {
         this._params = params;
 
-        this._poller = new Poller(this._pollingInterval, this._trackers, this._execute);
+        this._poller = new Poller(this._pollingInterval, this._trackers, this._execute, options.bar.layouts);
     }
 
     /**

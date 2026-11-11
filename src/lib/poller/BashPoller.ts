@@ -2,6 +2,7 @@ import { BarModule } from '../options/types';
 import { Poller } from './Poller';
 import { Binding, execAsync, Variable } from 'astal';
 import { GenericFunction } from './types';
+import options from '../../configuration';
 
 /**
  * A class that manages polling of a variable by executing a bash command at specified intervals.
@@ -46,7 +47,7 @@ export class BashPoller<Value, Parameters extends unknown[]> {
     ) {
         this._params = params;
 
-        this._poller = new Poller(this._pollingInterval, this._trackers, this.execute);
+        this._poller = new Poller(this._pollingInterval, this._trackers, this.execute, options.bar.layouts);
     }
 
     /**
